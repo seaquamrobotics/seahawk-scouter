@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" name="viewport" content="width=device-width; initial-scale=1.0;">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles.css') }}">
+  <script type=text/javascript src="{{ url_for('static',filename='data.js') }}"></script>
+  <title>Seaquam Vex Robotics Scouting</title>
+</head>
+<body>
+  <header><h1>{{ tournament_name }} Data</h1></header>
+  <table id="dataTable">
+    <tr>
+      <th>#</th>
+      <th>Robot</th>
+      <th style='font-size: 13px'>Best Driver</th>
+      <th style='font-size: 13px'>Avg Driver</th>
+      <th style='font-size: 13px'>Best Auton</th>
+      <th style='font-size: 13px'>Avg Auton</th>
+      <th>Notes</th>
+      <th style='font-size: 12px'>Times Scouted</th>
+    </tr>
+    {{ data }} 
+  </table>
+  {{ unscouted }}
+</body>
+</html>

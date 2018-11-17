@@ -1,0 +1,11 @@
+Database schema
+
+Reports(
+tournament_id INT, reporter_ip BIGINT,
+team_name TEXT, color TEXT, side TEXT, 
+auton_score INT, auton_high_flags INT, auton_low_flags INT, auton_high_caps INT, auton_low_caps INT, auton_park INT, 
+driver_score INT, driver_high_flags INT, driver_low_flags INT, driver_high_caps INT, driver_low_caps INT, driver_park INT,
+note TEXT
+)
+
+Reports(tournament_id INT, reporter_ip BIGINT, timestamp BIGINT, team_name TEXT, color TEXT, side TEXT, auton_score INT, auton_high_flags INT, auton_low_flags INT, auton_high_caps INT, auton_low_caps INT, auton_park INT, driver_score INT, driver_high_flags INT, driver_low_flags INT, driver_high_caps INT, driver_low_caps INT, driver_park INT, note TEXT)

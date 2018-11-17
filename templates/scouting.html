@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" name="viewport" content="width=device-width; initial-scale=1.0;">
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles.css') }}">
+	<title>Seaquam Vex Robotics Scouting</title>
+</head>
+<body>
+  <header><h1>Submit Report</h1></header>
+  <form class="formwrapper" method="post">
+    <div class="box">
+      Robot/Team Name: <input type="text" name="team" required>
+    </div>
+    <div class="box">
+      Optional Notes: <input type="text" name="notes">
+    </div>
+    <div class="box">
+      Alliance Colour:<br>
+      <input type="radio" name="color" value="red" required> Red<br>
+      <input type="radio" name="color" value="blue" required> Blue<br>
+    </div>
+    <div class="box">
+      Tile Placement (their point of view):<br>
+      <input type="radio" name="side" value="left" required> Left<br>
+      <input type="radio" name="side" value="right" required> Right<br>
+    </div>
+    <div class="titlebox">Autonomous</div>
+    <div class="box">
+      Low Caps: <input type="number" name="auton_low_caps" min=0 max=4 value=0><br><br>
+      High Caps: <input type="number" name="auton_high_caps" min=0 max=4 value=0><br><br><br>
+      Low Flags: <input type="number" name="auton_low_flags" min=0 max=4 value=0><br><br>
+      High/Medium Flags: <input type="number" name="auton_high_flags" min=0 max=4 value=0>
+      <br><br>Parking:<br>
+      <input type="radio" name="auton_park" value="none" required> None<br>
+      <input type="radio" name="auton_park" value="alliance" required> Alliance Park<br>
+    </div>
+    <div class="titlebox">Driver Control</div>
+    <div class="box">
+      Low Caps: <input type="number" name="driver_low_caps" min=0 max=10 value=0><br><br>
+      High Caps: <input type="number" name="driver_high_caps" min=0 max=10 value=0><br><br><br>
+      Low Flags: <input type="number" name="driver_low_flags" min=0 max=10 value=0><br><br>
+      High/Medium Flags: <input type="number" name="driver_high_flags" min=0 max=10 value=0>
+    </div>
+    <div class="box">
+      Parking:<br>
+      <input type="radio" name="driver_park" value="none" required> None<br>
+      <input type="radio" name="driver_park" value="high" required> High Park<br>
+      <input type="radio" name="driver_park" value="alliance" required> Alliance Park<br>
+    </div>
+    <div class="box">
+      <input type="submit" value="Submit Report">
+    </div>
+  </form>
+</body>
+</html>

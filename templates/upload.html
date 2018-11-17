@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<head>
+	<meta charset="UTF-8" name="viewport" content="width=device-width; initial-scale=1.0;">
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles.css') }}">
+	<title>Seaquam Vex Robotics Scouting</title>
+</head>
+<body>
+	<header><h1>Robot Photo Upload</h1></header>
+	<form class="formwrapper" method="post">
+		<input type="file" name="fileupload" value="none">
+		Upload a photo of a robot!<br>
+		<div class="box">
+    		<input type="submit" value="Submit Report">
+    	</div>
+	</form>
+</body>
+</html>
