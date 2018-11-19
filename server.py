@@ -14,6 +14,8 @@ import time
 import csv
 import os
 
+import dbutils
+
 # Configuration
 current_tournament_id = 5643
 current_year = 18
@@ -326,30 +328,20 @@ if __name__ == '__main__':
 	csv_output(current_tournament_id)
 	# Create tables if they do not already exist
 	#c.execute('SHOW TABLES')
-	tbls = []#str(c.fetchall())
-	if True:#'Tournaments' not in tbls:
-		c = db.cursor()
-		c.execute('CREATE TABLE IF NOT EXISTS Tournaments(tournament_id INT, tournament_name TEXT, team_list TEXT, PRIMARY KEY (tournament_id))')
-		c.close()
-		db.commit()
-	if True:#'Reports' not in tbls:
-		c = db.cursor()
-		c.execute('CREATE TABLE IF NOT EXISTS Reports(tournament_id INT, reporter_ip BIGINT, timestamp BIGINT, team_name TEXT, color TEXT, side TEXT, auton_score INT, auton_high_flags INT, auton_low_flags INT, auton_high_caps INT, auton_low_caps INT, auton_park INT, driver_score INT, driver_high_flags INT, driver_low_flags INT, driver_high_caps INT, driver_low_caps INT, driver_park INT, note TEXT)')
-		c.close()
-		db.commit()
+	dbutils.create_db_tables(db)
 	
 	# If current tournament does not exist in Tournaments table then add it
-	c = db.cursor()
-	c.execute('SELECT * FROM Tournaments WHERE tournament_id=' + str(current_tournament_id))
-	if len(c.fetchall()) == 0:
+	if dbutils.get_tournament_by_id(db, current_tournament_id) is None:
 
 		teams, tournament_name = get_tournament_info(current_tournament_id)
+		tournament_info = dbutils.Tournament(
+			tournament_id=current_tournament_id,
+			tournament_name=tournament_name,
+			team_list=teams
+		)
 
 		# Make new tournament entry
-		c.execute('INSERT INTO Tournaments(tournament_id, tournament_name, team_list)' +
-                  'VALUES ('+str(current_tournament_id)+',"'+tournament_name+'","'+teams+'")')
-		c.close()
-		db.commit()
+		dbutils.create_tournament(db, tournament_info)
 
 	app.run(threaded=True, debug=True, host='0.0.0.0', port=8000)
 
