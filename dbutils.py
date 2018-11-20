@@ -5,6 +5,29 @@ class Tournament:
         self.team_list = kwargs.get("team_list")
 
 
+class Report:
+    def __init__(self, **kwargs):
+        self.tournament_id = kwargs.get("tournament_id")
+        self.reporter_ip = kwargs.get("reporter_ip")
+        self.team_name = kwargs.get("team_name")
+        self.color = kwargs.get("color")
+        self.side = kwargs.get("side")
+        self.auton_score = kwargs.get("auton_score")
+        self.auton_low_flags = kwargs.get("auton_low_flags")
+        self.auton_high_flags = kwargs.get("auton_high_flags")
+        self.auton_low_caps = kwargs.get("auton_low_caps")
+        self.auton_high_caps = kwargs.get("auton_high_caps")
+        self.auton_park = kwargs.get("auton_park")
+        self.driver_score = kwargs.get("driver_score")
+        self.driver_low_flags = kwargs.get("driver_low_flags")
+        self.driver_high_flags = kwargs.get("driver_high_flags")
+        self.driver_low_caps = kwargs.get("driver_low_caps")
+        self.driver_high_caps = kwargs.get("driver_high_caps")
+        self.driver_park = kwargs.get("driver_park")
+        self.note = kwargs.get("note")
+        self.timestamp = kwargs.get("timestamp")
+
+
 def create_db_tables(db):
     """Creates the necessary database tables if they don't already exist.
     :param db Database connection object
@@ -73,3 +96,31 @@ def create_tournament(db, tournament_info):
     """, (tournament_info.tournament_id, tournament_info.tournament_name, tournament_info.team_list))
 
     db.commit()
+
+
+def create_report(db, tournament_id, report_info):
+        c = db.cursor()
+
+        c.execute('INSERT INTO Reports VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                  (tournament_id,
+                   report_info.reporter_ip,
+                   report_info.timestamp,
+                   report_info.team_name,
+                   report_info.color,
+                   report_info.side,
+                   report_info.auton_score,
+                   report_info.auton_high_flags,
+                   report_info.auton_low_flags,
+                   report_info.auton_high_caps,
+                   report_info.auton_low_caps,
+                   report_info.auton_park,
+                   report_info.driver_score,
+                   report_info.driver_high_flags,
+                   report_info.driver_low_flags,
+                   report_info.driver_high_caps,
+                   report_info.driver_low_caps,
+                   report_info.driver_park,
+                   report_info.note)
+        )
+
+        db.commit()

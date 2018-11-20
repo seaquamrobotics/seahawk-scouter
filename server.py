@@ -57,25 +57,6 @@ def get_tournament_info(tournament_id):
 
 	return teams, tournament_name
 
-def report(reporter_ip, team_name, color, side, 
-		   auton_score, auton_high_flags, auton_low_flags, auton_high_caps, auton_low_caps, auton_park,
-		   driver_score, driver_high_flags, driver_low_flags, driver_high_caps, driver_low_caps,
-		   driver_park, note=""):
-    db = sqlite3.connect(db_name)
-    c = db.cursor()
-    
-    time_stamp = int(time.time())
-    c.execute('INSERT INTO Reports VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-          	[current_tournament_id, reporter_ip, time_stamp,
-          	team_name, color, side,
-          	auton_score, auton_high_flags, auton_low_flags, auton_high_caps, auton_low_caps, auton_park,
-          	driver_score, driver_high_flags, driver_low_flags, driver_high_caps, driver_low_caps,
-          	driver_park, note]
-          	)
-    
-    c.close()
-    db.commit()
-
 def pull_reports(tournament_id, team_name=None):
     db = sqlite3.connect(db_name)
     c = db.cursor()
@@ -218,11 +199,27 @@ def scouting():
 
 			note = request.form['notes'].translate(sanitize)
 
+			report_info = dbutils.Report(
+				reporter_ip=reporter_ip,
+				team_name=team_name,
+				color=color,
+				side=side,
+				auton_score=auton_score,
+				auton_high_flags=auton_high_flags,
+				auton_low_flags=auton_low_flags,
+				auton_high_caps=auton_high_caps,
+				auton_low_caps=auton_low_caps,
+				auton_park=auton_park,
+				driver_score=driver_score,
+				driver_high_flags=driver_high_flags,
+				driver_low_flags=driver_low_flags,
+				driver_high_caps=driver_high_caps,
+				driver_low_caps=driver_low_caps,
+				driver_park=driver_park,
+				note=note,
+				timestamp=int(time.time()))
 
-			report(reporter_ip, team_name, color, side, 
-				auton_score, auton_high_flags, auton_low_flags, auton_high_caps, auton_low_caps, auton_park,
-				driver_score, driver_high_flags, driver_low_flags, driver_high_caps, driver_low_caps,
-				driver_park, note)
+			dbutils.create_report(db, current_tournament_id, report_info)
 
 		else:
 			if len(team_name) == 0:
