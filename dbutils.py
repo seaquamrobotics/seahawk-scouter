@@ -35,35 +35,35 @@ def create_db_tables(db):
 	c = db.cursor()
 
 	c.execute("""
-        CREATE TABLE IF NOT EXISTS Tournaments(
-            tournament_id INT, 
-            tournament_name TEXT, 
-            team_list TEXT, 
-            PRIMARY KEY (tournament_id))
-    """)
+		CREATE TABLE IF NOT EXISTS Tournaments(
+			tournament_id INT, 
+			tournament_name TEXT, 
+			team_list TEXT, 
+			PRIMARY KEY (tournament_id))
+	""")
 
 	c.execute("""
-        CREATE TABLE IF NOT EXISTS Reports(
-            tournament_id INT, 
-            reporter_ip BIGINT, 
-            timestamp BIGINT, 
-            team_name TEXT, 
-            color TEXT, 
-            side TEXT, 
-            auton_score INT, 
-            auton_high_flags INT, 
-            auton_low_flags INT, 
-            auton_high_caps INT, 
-            auton_low_caps INT, 
-            auton_park INT, 
-            driver_score INT, 
-            driver_high_flags INT, 
-            driver_low_flags INT, 
-            driver_high_caps INT, 
-            driver_low_caps INT, 
-            driver_park INT, 
-            note TEXT)
-    """)
+		CREATE TABLE IF NOT EXISTS Reports(
+			tournament_id INT, 
+			reporter_ip BIGINT, 
+			timestamp BIGINT, 
+			team_name TEXT, 
+			color TEXT, 
+			side TEXT, 
+			auton_score INT, 
+			auton_high_flags INT, 
+			auton_low_flags INT, 
+			auton_high_caps INT, 
+			auton_low_caps INT, 
+			auton_park INT, 
+			driver_score INT, 
+			driver_high_flags INT, 
+			driver_low_flags INT, 
+			driver_high_caps INT, 
+			driver_low_caps INT, 
+			driver_park INT, 
+			note TEXT)
+	""")
 
 	db.commit()
 
@@ -91,9 +91,9 @@ def create_tournament(db, tournament_info):
 	"""
 	c = db.cursor()
 	c.execute("""
-        INSERT INTO Tournaments(tournament_id, tournament_name, team_list)
-        VALUES (?, ?, ?)
-    """, (tournament_info.tournament_id, tournament_info.tournament_name, tournament_info.team_list))
+		INSERT INTO Tournaments(tournament_id, tournament_name, team_list)
+		VALUES (?, ?, ?)
+	""", (tournament_info.tournament_id, tournament_info.tournament_name, tournament_info.team_list))
 
 	db.commit()
 
@@ -101,26 +101,26 @@ def create_tournament(db, tournament_info):
 def create_report(db, tournament_id, report_info):
 	c = db.cursor()
 
-	c.execute('INSERT INTO Reports VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-			  (tournament_id,
-			   report_info.reporter_ip,
-			   report_info.timestamp,
-			   report_info.team_name,
-			   report_info.color,
-			   report_info.side,
-			   report_info.auton_score,
-			   report_info.auton_high_flags,
-			   report_info.auton_low_flags,
-			   report_info.auton_high_caps,
-			   report_info.auton_low_caps,
-			   report_info.auton_park,
-			   report_info.driver_score,
-			   report_info.driver_high_flags,
-			   report_info.driver_low_flags,
-			   report_info.driver_high_caps,
-			   report_info.driver_low_caps,
-			   report_info.driver_park,
-			   report_info.note)
-			  )
+	c.execute('INSERT INTO Reports VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', (
+				tournament_id,
+				report_info.reporter_ip,
+				report_info.timestamp,
+				report_info.team_name,
+				report_info.color,
+				report_info.side,
+				report_info.auton_score,
+				report_info.auton_high_flags,
+				report_info.auton_low_flags,
+				report_info.auton_high_caps,
+				report_info.auton_low_caps,
+				report_info.auton_park,
+				report_info.driver_score,
+				report_info.driver_high_flags,
+				report_info.driver_low_flags,
+				report_info.driver_high_caps,
+				report_info.driver_low_caps,
+				report_info.driver_park,
+				report_info.note)
+			)
 
 	db.commit()
