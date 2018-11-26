@@ -34,6 +34,12 @@ def get_db():
 		g.db = sqlite3.connect(db_name)
 	return g.db
 
+@app.teardown_appcontext
+def teardown(exception):
+	if "db" in g:
+		g.db.close()
+
+
 def csv_output(tournament_id):
 	c = get_db().cursor()
 	c.execute('SELECT team_name, color, side, auton_score, auton_high_flags, auton_low_flags, auton_high_caps, auton_low_caps, auton_park, driver_score, driver_high_flags, driver_low_flags, driver_high_caps, driver_low_caps, driver_park, note FROM Reports WHERE tournament_id=' + str(tournament_id))
@@ -318,4 +324,3 @@ if __name__ == '__main__':
 
 	app.run(debug=True, host='0.0.0.0', port=8000)
 
-db.close()
