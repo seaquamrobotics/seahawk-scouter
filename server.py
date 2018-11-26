@@ -11,7 +11,6 @@ from datetime import datetime
 import requests
 import sqlite3
 import time
-import csv
 import os
 
 import dbutils
@@ -38,19 +37,6 @@ def get_db():
 def teardown(exception):
 	if "db" in g:
 		g.db.close()
-
-
-def csv_output(tournament_id):
-	c = get_db().cursor()
-	c.execute('SELECT team_name, color, side, auton_score, auton_high_flags, auton_low_flags, auton_high_caps, auton_low_caps, auton_park, driver_score, driver_high_flags, driver_low_flags, driver_high_caps, driver_low_caps, driver_park, note FROM Reports WHERE tournament_id=' + str(tournament_id))
-	robotData = c.fetchall()
-	c.close()
-	with open('scouting.csv', 'w', newline='') as csvfile:
-		csvwriter = csv.writer(csvfile, delimiter=',',
-                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
-		csvwriter.writerow(["tournament_id","team_name","color","side","auton_score","auton_high_flags","auton_low_flags","auton_high_caps","auton_low_caps","auton_park","driver_score","driver_high_flags","driver_low_flags","driver_high_caps","driver_low_caps","driver_park","note"])
-		for row in robotData:
-			csvwriter.writerow(row)
 
 def get_tournament_info(tournament_id):
 	# Scrape tournament data from vexdb.io
