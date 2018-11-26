@@ -132,7 +132,7 @@ def index():
 def scouting():
 	#TODO: Store diffent autonomous positions
 	if request.method == 'POST':
-		tournament = dbutils.get_tournament_by_id(db, current_tournament_id)
+		tournament = dbutils.get_tournament_by_id(get_db(), current_tournament_id)
 		tournament_name = tournament.tournament_name
 		valid_teams = tournament.team_list.split()
 		auton_score = 0
@@ -201,7 +201,7 @@ def scouting():
 				note=note,
 				timestamp=int(time.time()))
 
-			dbutils.create_report(db, current_tournament_id, report_info)
+			dbutils.create_report(get_db(), current_tournament_id, report_info)
 
 		else:
 			if len(team_name) == 0:
@@ -213,7 +213,7 @@ def scouting():
 
 @app.route('/data/<int:tournament_id>') # Compiled scouting reports page
 def data(tournament_id):
-	tournament_name = dbutils.get_tournament_by_id(db, tournament_id).tournament_name
+	tournament_name = dbutils.get_tournament_by_id(get_db(), tournament_id).tournament_name
 	robots_data = ''
 	for i, row in enumerate(reverse_bubble_sort(compress_reports(tournament_id))):
 		robots_data += '<tr><td>'+str(i+1)+'</td>'
