@@ -1,3 +1,5 @@
+import re
+
 class Tournament:
 	def __init__(self, **kwargs):
 		self.tournament_id = kwargs.get("tournament_id")
@@ -72,6 +74,25 @@ def create_db_tables(db):
 			driver_park INT, 
 			note TEXT)
 	""")
+
+	db.commit()
+
+
+def add_team_to_tournament(db, tournament_id, team_id):
+	teams = get_tournament_by_id(db, tournament_id).team_list.split(" ")
+
+	# Check the team ID is valid
+	if not re.match("[0-9]+[A-Za-z]+", team_id):
+		raise ValueError("Not a valid team ID: %s" % team_id)
+
+	if team_id in teams:
+		raise ValueError("Team %s already exists!" % team_id)
+
+	teams.append(team_id)
+
+	c = db.cursor()
+	c.execute("UPDATE Tournaments SET team_list=? WHERE tournament_id=?",
+				(" ".join(teams), tournament_id))
 
 	db.commit()
 
