@@ -4,6 +4,10 @@ class Tournament:
 		self.tournament_name = kwargs.get("tournament_name")
 		self.team_list = kwargs.get("team_list")
 
+	@staticmethod
+	def from_db_row(cur, row):
+		return Tournament(**_get_row_dict(cur, row))
+
 
 class Report:
 	def __init__(self, **kwargs):
@@ -25,7 +29,11 @@ class Report:
 		self.driver_high_caps = kwargs.get("driver_high_caps")
 		self.driver_park = kwargs.get("driver_park")
 		self.note = kwargs.get("note")
-		self.timestamp = kwargs.get("timestamp")
+		self.timestamp = kwargs.get("time_stamp")
+
+	@staticmethod
+	def from_db_row(cur, row):
+		return Report(**_get_row_dict(cur, row))
 
 
 def create_db_tables(db):
@@ -68,6 +76,16 @@ def create_db_tables(db):
 	db.commit()
 
 
+def get_all_tournaments(db):
+	"""Gets all tournaments in the database
+	:param db Database connection object
+	:return List of tournament objects
+	"""
+	c = db.cursor()
+	c.execute("SELECT * FROM Tournaments")
+	return [Tournament.from_db_row(c, row) for row in c]
+
+
 def get_tournament_by_id(db, tournament_id):
 	"""Gets tournament information from the database.
 	:param db Database connection object
@@ -79,9 +97,25 @@ def get_tournament_by_id(db, tournament_id):
 	r = c.fetchone()
 
 	if r is not None:
-		return Tournament(tournament_id=r[0], tournament_name=r[1], team_list=r[2])
+		return Tournament.from_db_row(c, r)
 	else:
 		return None
+
+
+def get_reports_for_tournament(db, tournament_id, team_id=None):
+	"""Gets all reports for a tournament
+	:param db Database connection object
+	:param tournament_id Tournament id
+	:param team_id Filter for team ID (optional)
+	:return List of Report objects
+	"""
+	c = db.cursor()
+	if team_id is None:
+		res = c.execute("SELECT * FROM Reports WHERE tournament_id=?", (tournament_id,))
+	else:
+		res = c.execute("SELECT * FROM Reports WHERE tournament_id=? AND team_name=?",
+						(tournament_id, team_id))
+	return [Report.from_db_row(c, row) for row in res]
 
 
 def create_tournament(db, tournament_info):
@@ -124,3 +158,11 @@ def create_report(db, tournament_id, report_info):
 			)
 
 	db.commit()
+
+
+def _get_row_dict(cur, row):
+	# Weird hacky way of converting a sqlite row into a dictionary.
+	d = {}
+	for i, column in enumerate(cur.description):
+		d[column[0]] = row[i]
+	return d

@@ -21,9 +21,6 @@ current_tournament_id = 5643
 current_year = 18
 db_name = 'vex_turning_point' #os.environ['DB_NAME']
 
-# Open database connection
-db = sqlite3.connect(db_name)
-
 clean = str.maketrans('', '', """ ^$#@~`&;:|{()}[]<>+=!?.,\/*-_"'""")
 sanitize = str.maketrans('', '', """^~`;:|{()}[]+=\*_"'""")
 
@@ -66,15 +63,6 @@ def get_tournament_info(tournament_id):
 
 	return teams, tournament_name
 
-def pull_reports(tournament_id, team_name=None):
-    c = get_db().cursor()
-
-    if team_name:
-        c.execute('SELECT * FROM Reports WHERE team_name="' + team_name + '" AND tournament_id=' + str(tournament_id))
-    else:
-        c.execute('SELECT * FROM Reports WHERE tournament_id=' + str(tournament_id))
-    return c.fetchall()
-
 def get_unscouted_robots(tournament_id): # Returns a list of unscouted robots
 	scouted = []
 	unscouted = []
@@ -88,35 +76,35 @@ def get_unscouted_robots(tournament_id): # Returns a list of unscouted robots
 			unscouted.append(r)
 	return unscouted
 
-def compress_reports(tournament_id): # Compile data and find average values for each robot
-    c = get_db().cursor()
-    c.execute('SELECT team_name, auton_score, driver_score, note FROM Reports WHERE tournament_id=' + str(tournament_id))
-    robotData = c.fetchall()
-    robots = []
-    for row in robotData:  # Find unique robots
-        if row[0] not in robots: robots.append(row[0])
-    compressedData = []
-    for robot in robots:
-        best_drive_score = 0
-        best_auton_score = 0
-        total_drive_score = 0
-        total_auton_score = 0
-        entryCount = 0
-        notes = ''
-        for row in robotData:
-            if row[0] == robot:
-                entryCount += 1
-                total_drive_score += int(row[2])
-                total_auton_score += int(row[1])
-                if int(row[2]) > best_drive_score:
-                	best_drive_score = int(row[2])
-                if int(row[1]) > best_auton_score:
-                	best_auton_score = int(row[1])
-                if row[3]:
-                	notes += '~ '+row[3]+'<br>'
-        compressedData.append([robot, best_drive_score, int(total_drive_score / entryCount), best_auton_score, int(total_auton_score / entryCount), notes, entryCount])
-    c.close()
-    return compressedData
+
+def compress_reports(tournament_id):  # Compile data and find average values for each robot
+	robotData = dbutils.get_reports_for_tournament(get_db(), tournament_id)
+
+	robots = []
+	for row in robotData:  # Find unique robots
+		if row.team_name not in robots: robots.append(row.team_name)
+	compressedData = []
+	for robot in robots:
+		best_drive_score = 0
+		best_auton_score = 0
+		total_drive_score = 0
+		total_auton_score = 0
+		entryCount = 0
+		notes = ''
+		for row in robotData:
+			if row.team_name == robot:
+				entryCount += 1
+				total_drive_score += int(row.driver_score)
+				total_auton_score += int(row.auton_score)
+				if int(row.driver_score) > best_drive_score:
+					best_drive_score = int(row.driver_score)
+				if int(row.auton_score) > best_auton_score:
+					best_auton_score = int(row.auton_score)
+				if row.note:
+					notes += '~ ' + row.note + '<br>'
+		compressedData.append([robot, best_drive_score, int(total_drive_score / entryCount), best_auton_score,
+							   int(total_auton_score / entryCount), notes, entryCount])
+	return compressedData
 
 
 def robot_power(robot_stats): # Enter compiled data row as input. Formula: power = best_driver + avg_driver + best_auton + avg_auton + highest_stack * 2 + times_scouted
@@ -137,21 +125,16 @@ def reverse_bubble_sort(collection): # Sort reports by best robot power
 
 @app.route('/') # Home page
 def index():
-	c = get_db().cursor()
-	c.execute('SELECT tournament_name FROM Tournaments WHERE tournament_id=' + str(current_tournament_id))
-	tournament_name = c.fetchall()[0][0]
+	tournament_name = dbutils.get_tournament_by_id(get_db(), current_tournament_id).tournament_name
 	return render_template('index.html', current_tournament_name=tournament_name, current_tournament_id=current_tournament_id, status="Seaquam Robotics Scouting")
 
 @app.route('/scouting', methods=['POST', 'GET']) # Scouting submission page
 def scouting():
 	#TODO: Store diffent autonomous positions
 	if request.method == 'POST':
-		c = get_db().cursor()
-		c.execute('SELECT tournament_name, team_list FROM Tournaments WHERE tournament_id=' + str(current_tournament_id))
-		query = c.fetchall()
-		c.close()
-		tournament_name = query[0][0]
-		valid_teams = query[0][1].split()
+		tournament = dbutils.get_tournament_by_id(db, current_tournament_id)
+		tournament_name = tournament.tournament_name
+		valid_teams = tournament.team_list.split()
 		auton_score = 0
 		score = 0
 		team_name = request.form['team'].translate(clean).upper()
@@ -166,7 +149,7 @@ def scouting():
 
 			reporter_ip = request.environ['REMOTE_ADDR'].translate(clean)
 
-			
+
 			auton_low_flags = int(request.form['auton_low_flags'])
 			auton_high_flags = int(request.form['auton_high_flags'])
 			auton_low_caps = int(request.form['auton_low_caps'])
@@ -178,7 +161,7 @@ def scouting():
 				auton_park = 0
 			auton_score += auton_low_flags + auton_high_flags * 2 + auton_low_caps + auton_high_caps * 2 + auton_park
 			print(auton_score)
-			
+
 			driver_low_flags = int(request.form['driver_low_flags'])
 			driver_high_flags = int(request.form['driver_high_flags'])
 			driver_low_caps = int(request.form['driver_low_caps'])
@@ -230,12 +213,9 @@ def scouting():
 
 @app.route('/data/<int:tournament_id>') # Compiled scouting reports page
 def data(tournament_id):
-	c = get_db().cursor()
-	c.execute('SELECT tournament_name FROM Tournaments WHERE tournament_id=' + str(tournament_id))
-	tournament_name = c.fetchall()[0][0]
-	c.close()
+	tournament_name = dbutils.get_tournament_by_id(db, tournament_id).tournament_name
 	robots_data = ''
-	for i, row in enumerate(reverse_bubble_sort(compress_reports(tournament_id))): 
+	for i, row in enumerate(reverse_bubble_sort(compress_reports(tournament_id))):
 		robots_data += '<tr><td>'+str(i+1)+'</td>'
 		for i, cell in enumerate(row):
 			if i == 0:
@@ -259,36 +239,32 @@ def data(tournament_id):
 
 @app.route('/tournaments')
 def tournaments():
-	c = get_db().cursor()
 	tournaments_html = ''
-	c.execute('SELECT tournament_id, tournament_name, team_list FROM Tournaments')
-	for t in c.fetchall():
-		tournaments_html += '<a class="box2 bluebg" href="data/' + str(t[0]) + '">' + t[1] + '</a>'
+	tournaments = dbutils.get_all_tournaments(get_db())
+	for t in tournaments:
+		tournaments_html += '<a class="box2 bluebg" href="data/' + str(t.tournament_id) + '">' + t.tournament_name + '</a>'
 	tournaments_html = Markup(tournaments_html)
-	c.close()
 	return render_template('past_tournaments.html', tournaments=tournaments_html)
 
 @app.route('/autonomous/<string:team_name>') # Show all autonomous attempt details for a specified team
 def autonomous(team_name):
 	autonomous_reports = ''
-	c = get_db().cursor()
-	c.execute('SELECT auton_score, color, side, time_stamp FROM Reports WHERE team_name="' + team_name + '" AND tournament_id=' + str(current_tournament_id))
-	for row in c.fetchall():
+	reports = dbutils.get_reports_for_tournament(get_db(), current_tournament_id, team_name)
+	for r in reports:
 		classes = ''
-		if row[1] == 'red': classes = 'redteam '
-		elif row[1] == 'blue': classes = 'blueteam '
+		if r.color == 'red': classes = 'redteam '
+		elif r.color == 'blue': classes = 'blueteam '
 		else: classes = 'noteam '
 
 		side = ''
-		if row[2] == 'right': 
+		if r.side == 'right':
 			side = 'RIGHT'
-		elif row[2] == 'left': 
+		elif r.side == 'left':
 			side = 'LEFT'
-		else: 
+		else:
 			side = '?????'
 
-		autonomous_reports += '<div class="'+classes+'box2"><span class="left">' + datetime.fromtimestamp(row[3]).strftime('%I:%M %p') + '</span>' + str(row[0]) + ' Points <span class="right">' + side + ' TILE</span></div>'
-	c.close()
+		autonomous_reports += '<div class="'+classes+'box2"><span class="left">' + datetime.fromtimestamp(r.timestamp).strftime('%I:%M %p') + '</span>' + str(r.tournament_id) + ' Points <span class="right">' + side + ' TILE</span></div>'
 	autonomous_reports = Markup(autonomous_reports)
 	return render_template('autonomous.html', team_name=team_name.upper(), autonomous_reports=autonomous_reports)
 
@@ -321,8 +297,12 @@ if __name__ == '__main__':
 	# csv_output(current_tournament_id)
 	# Create tables if they do not already exist
 	#c.execute('SHOW TABLES')
+
+	# Db connection object for setting up
+	db = sqlite3.connect(db_name)
+
 	dbutils.create_db_tables(db)
-	
+
 	# If current tournament does not exist in Tournaments table then add it
 	if dbutils.get_tournament_by_id(db, current_tournament_id) is None:
 
