@@ -5,7 +5,7 @@
 # -Advanced auton scouter (could be used for skills)
 # -Back buttons
 
-from flask import Flask, Markup, render_template, request
+from flask import Flask, Markup, render_template, request, g
 from bs4 import BeautifulSoup
 from datetime import datetime
 import requests
@@ -27,9 +27,18 @@ db = sqlite3.connect(db_name)
 clean = str.maketrans('', '', """ ^$#@~`&;:|{()}[]<>+=!?.,\/*-_"'""")
 sanitize = str.maketrans('', '', """^~`;:|{()}[]+=\*_"'""")
 
+app = Flask(__name__)
+
+@app.before_first_request
+def get_db():
+	# Uses the Flask global object. This way we only use one database
+	# object per request.
+	if "db" not in g:
+		g.db = sqlite3.connect(db_name)
+	return g.db
+
 def csv_output(tournament_id):
-	db = sqlite3.connect(db_name)
-	c = db.cursor()
+	c = get_db().cursor()
 	c.execute('SELECT team_name, color, side, auton_score, auton_high_flags, auton_low_flags, auton_high_caps, auton_low_caps, auton_park, driver_score, driver_high_flags, driver_low_flags, driver_high_caps, driver_low_caps, driver_park, note FROM Reports WHERE tournament_id=' + str(tournament_id))
 	robotData = c.fetchall()
 	c.close()
@@ -58,8 +67,7 @@ def get_tournament_info(tournament_id):
 	return teams, tournament_name
 
 def pull_reports(tournament_id, team_name=None):
-    db = sqlite3.connect(db_name)
-    c = db.cursor()
+    c = get_db().cursor()
 
     if team_name:
         c.execute('SELECT * FROM Reports WHERE team_name="' + team_name + '" AND tournament_id=' + str(tournament_id))
@@ -68,25 +76,20 @@ def pull_reports(tournament_id, team_name=None):
     return c.fetchall()
 
 def get_unscouted_robots(tournament_id): # Returns a list of unscouted robots
-	db = sqlite3.connect(db_name)
-	c = db.cursor()
 	scouted = []
 	unscouted = []
-	c.execute('SELECT team_list FROM Tournaments WHERE tournament_id=' + str(tournament_id))
-	teams = c.fetchall()[0][0].split()
-	for r in pull_reports(tournament_id):
+	teams = dbutils.get_tournament_by_id(get_db(), tournament_id).team_list.split(" ")
+	for r in dbutils.get_reports_for_tournament(get_db(), tournament_id):
 		for t in teams:
-			if t == r[0] and t not in scouted:
+			if t == r.team_name and t not in scouted:
 				scouted.append(t)
 	for r in teams:
 		if r not in scouted:
 			unscouted.append(r)
-	c.close()
 	return unscouted
 
 def compress_reports(tournament_id): # Compile data and find average values for each robot
-    db = sqlite3.connect(db_name)
-    c = db.cursor()
+    c = get_db().cursor()
     c.execute('SELECT team_name, auton_score, driver_score, note FROM Reports WHERE tournament_id=' + str(tournament_id))
     robotData = c.fetchall()
     robots = []
@@ -132,12 +135,9 @@ def reverse_bubble_sort(collection): # Sort reports by best robot power
 	return collection[::-1]
 
 
-app = Flask(__name__)
-
 @app.route('/') # Home page
 def index():
-	db = sqlite3.connect(db_name)
-	c = db.cursor()
+	c = get_db().cursor()
 	c.execute('SELECT tournament_name FROM Tournaments WHERE tournament_id=' + str(current_tournament_id))
 	tournament_name = c.fetchall()[0][0]
 	return render_template('index.html', current_tournament_name=tournament_name, current_tournament_id=current_tournament_id, status="Seaquam Robotics Scouting")
@@ -146,8 +146,7 @@ def index():
 def scouting():
 	#TODO: Store diffent autonomous positions
 	if request.method == 'POST':
-		db = sqlite3.connect(db_name)
-		c = db.cursor()
+		c = get_db().cursor()
 		c.execute('SELECT tournament_name, team_list FROM Tournaments WHERE tournament_id=' + str(current_tournament_id))
 		query = c.fetchall()
 		c.close()
@@ -231,8 +230,7 @@ def scouting():
 
 @app.route('/data/<int:tournament_id>') # Compiled scouting reports page
 def data(tournament_id):
-	db = sqlite3.connect(db_name)
-	c = db.cursor()
+	c = get_db().cursor()
 	c.execute('SELECT tournament_name FROM Tournaments WHERE tournament_id=' + str(tournament_id))
 	tournament_name = c.fetchall()[0][0]
 	c.close()
@@ -261,8 +259,7 @@ def data(tournament_id):
 
 @app.route('/tournaments')
 def tournaments():
-	db = sqlite3.connect(db_name)
-	c = db.cursor()
+	c = get_db().cursor()
 	tournaments_html = ''
 	c.execute('SELECT tournament_id, tournament_name, team_list FROM Tournaments')
 	for t in c.fetchall():
@@ -274,8 +271,7 @@ def tournaments():
 @app.route('/autonomous/<string:team_name>') # Show all autonomous attempt details for a specified team
 def autonomous(team_name):
 	autonomous_reports = ''
-	db = sqlite3.connect(db_name)
-	c = db.cursor()
+	c = get_db().cursor()
 	c.execute('SELECT auton_score, color, side, time_stamp FROM Reports WHERE team_name="' + team_name + '" AND tournament_id=' + str(current_tournament_id))
 	for row in c.fetchall():
 		classes = ''
@@ -322,7 +318,7 @@ def page_not_found(e):
 	return render_template('404.html'), 404
 
 if __name__ == '__main__':
-	csv_output(current_tournament_id)
+	# csv_output(current_tournament_id)
 	# Create tables if they do not already exist
 	#c.execute('SHOW TABLES')
 	dbutils.create_db_tables(db)
@@ -340,6 +336,6 @@ if __name__ == '__main__':
 		# Make new tournament entry
 		dbutils.create_tournament(db, tournament_info)
 
-	app.run(threaded=True, debug=True, host='0.0.0.0', port=8000)
+	app.run(debug=True, host='0.0.0.0', port=8000)
 
 db.close()
