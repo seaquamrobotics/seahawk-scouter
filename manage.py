@@ -87,7 +87,7 @@ def import_tournament(*args):
 		sys.exit(0)
 
 	# Get tournament name
-	print("Looking for tournament %s on vexdb...")
+	print("Looking for tournament %s on vexdb..." % tournament_id)
 	resp = requests.get("http://api.vexdb.io/v1/get_events?sku=RE-VRC-%d-%d"
 						% (current_year, tournament_id)).json()
 	if resp["size"] > 0:
@@ -95,11 +95,14 @@ def import_tournament(*args):
 		print("Found tournament: %s" % name)
 	else:
 		print("Couldn't find tournament!")
+		sys.exit(-1)
 
 	with open(csv_path, 'r') as file:
 		reader = csv.reader(file)
 		next(reader)  # skip first row
-		teams = " ".join([row[0] for row in reader])
+
+		team_list = [row[0] for row in reader]
+		teams = " ".join(team_list)
 
 	db = sqlite3.connect(db_name)
 	dbutils.create_tournament(db, dbutils.Tournament(
@@ -107,6 +110,8 @@ def import_tournament(*args):
 		tournament_name=name,
 		team_list=teams
 	))
+
+	print("Added %d teams to the database." % len(team_list))
 
 
 if __name__ == "__main__":
