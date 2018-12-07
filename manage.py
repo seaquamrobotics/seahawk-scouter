@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
 import csv
-import re
 import sys
 import textwrap
 import dbutils
 import sqlite3
+import requests
 
-from server import db_name, current_tournament_id
+from server import db_name, current_tournament_id, current_year
 
 
 def add_team(*args):
@@ -69,6 +69,46 @@ def dump_csv(*args):
 		csvwriter.writerow(row)
 
 
+def import_tournament(*args):
+	doc = textwrap.dedent("""
+		Usage: ./manage.py importtournament [csv file] [tournament id]
+
+		Imports tournament team data from a csv file
+		""").strip()
+
+	if len(args) == 2:
+		csv_path = args[0]
+		tournament_id = args[1]
+	elif len(args) == 1:
+		csv_path = args[0]
+		tournament_id = current_tournament_id
+	else:
+		print(doc)
+		sys.exit(0)
+
+	# Get tournament name
+	print("Looking for tournament %s on vexdb...")
+	resp = requests.get("http://api.vexdb.io/v1/get_events?sku=RE-VRC-%d-%d"
+						% (current_year, tournament_id)).json()
+	if resp["size"] > 0:
+		name = resp["result"][0]["name"]
+		print("Found tournament: %s" % name)
+	else:
+		print("Couldn't find tournament!")
+
+	with open(csv_path, 'r') as file:
+		reader = csv.reader(file)
+		next(reader)  # skip first row
+		teams = " ".join([row[0] for row in reader])
+
+	db = sqlite3.connect(db_name)
+	dbutils.create_tournament(db, dbutils.Tournament(
+		tournament_id=tournament_id,
+		tournament_name=name,
+		team_list=teams
+	))
+
+
 if __name__ == "__main__":
 	doc = textwrap.dedent("""
 	Usage: ./manage.py [command]
@@ -85,5 +125,7 @@ if __name__ == "__main__":
 		add_team(*sys.argv[2:])
 	elif sys.argv[1] == "dumpcsv":
 		dump_csv(*sys.argv[2:])
+	elif sys.argv[1] == "importtournament":
+		import_tournament(*sys.argv[2:])
 	else:
 		print(doc)
